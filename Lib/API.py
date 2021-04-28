@@ -1,7 +1,7 @@
 import requests
 import os
 import json
-import util
+import Lib.util as util
 
 
 def getStreams(gameId, maxLen=50, pagination=None):
@@ -16,4 +16,4 @@ def getStreams(gameId, maxLen=50, pagination=None):
         status = requests.get(f'https://api.twitch.tv/helix/streams?game_id={gameId}&first={maxLen}', headers=API_HEADERS)
     return(status.json())
 
-getStreams(botwGameId)
+getStreams(110758)

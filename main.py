@@ -1,5 +1,6 @@
 import Lib.API as api
 import json
+import ftplib
 
 botwGameId = 110758
 
@@ -14,6 +15,17 @@ def checkStreams(pagination=None, maxLength=50, resultList=[]):
         print('else')
         pass
     return(resultList)
+
+def uploadFile(file, fileName, destHost):
+    user = os.getenv('FTP_USERNAME')
+    password = os.getenv('FTP_PASSWORD')
+    ftp = ftplib.FTP(destHost)
+    ftp.login(user=user, passwd=password)
+    ftp.storbinary(f'STOR {fileName}', open(file, 'rb'))
+    try:
+        ftp.quit()
+    except:
+        ftp.close()
 
 def main():
     streamList = []

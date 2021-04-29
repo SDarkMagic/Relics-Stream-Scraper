@@ -1,6 +1,7 @@
 import Lib.API as api
 import json
 import ftplib
+import os
 import asyncio
 
 botwGameId = 110758
@@ -22,6 +23,7 @@ def uploadFile(file, fileName, destHost):
     ftp = ftplib.FTP(destHost)
     ftp.login(user=user, passwd=password)
     ftp.storbinary(f'STOR {fileName}', open(file, 'rb'))
+    print(f'{fileName} uploaded successfully!')
     try:
         ftp.quit()
     except:
@@ -45,5 +47,6 @@ async def main():
       status = streams
       print(len(status))
       writeData.write(json.dumps(relicsStreams, indent=2))
+    uploadFile('response.json', 'response.json', "ftp.relicsofthepast.dev")
 
 asyncio.run(main())

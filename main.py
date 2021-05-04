@@ -1,20 +1,39 @@
 import Lib.API as api
+import Lib.util as util
 import json
 import ftplib
 import os
-import asyncio
+import threading
+import queue
+import time
+#import sys
+#import signal
 
+oauthToken = None
 botwGameId = 110758
-async def checkStreams(pagination=None, maxLength=50, resultList=[]):
+
+"""
+def killHandler(signal_received, frame):
+    dataQueue.put('kill')
+    refreshThread.join()
+    mainThread.join()
+    sys.exit(0)
+"""
+def checkStreams(pagination=None, maxLength=50, resultList=None):
+    if resultList != None:
+        pass
+    else:
+        resultList = []
     print('maxLength ', maxLength)
-    streams = api.getStreams(botwGameId, maxLen=maxLength, pagination=pagination)
+    streams = api.getStreams(oauthToken, botwGameId, maxLen=maxLength, pagination=pagination)
     resultList.extend(streams['data'])
     if len(streams['data']) == maxLength or len(streams['data']) == maxLength:
-        print('if')
-        resultList.extend(await checkStreams(pagination=streams['pagination']['cursor'], maxLength=maxLength, resultList=resultList))
+        #print('if')
+        resultList.extend(checkStreams(pagination=streams['pagination']['cursor'], maxLength=maxLength, resultList=resultList))
     else:
-        print('else')
+        #print('else')
         pass
+    print('finished checkStreams')
     return(resultList)
 
 def uploadFile(file, fileName, destHost):
@@ -29,24 +48,50 @@ def uploadFile(file, fileName, destHost):
     except:
         ftp.close()
 
-async def main():
+def main(queue):
+    global oauthToken
     maxLength = 100
-    relicsStreams = []
-    streams = await checkStreams(maxLength=maxLength)
+    print('started main')
+    while True:
+        queueData = queue.get()
+        #print(queueData)
+        oauthToken = queueData
+        relicsStreams = []
+        streams = checkStreams(maxLength=maxLength)
+        #print(f'streams length {len(streams)}')
+        for stream in streams:
+            if isinstance(stream, dict):
+                title = stream['title'].lower().split(' ')
+                if 'relics' in title and stream['type'] == 'live':
+                    #print(title)
+                    relicsStreams.append(stream)
+                else:
+                    continue
+            else:
+                continue
+        with open('response.json', 'wt') as writeData:
+            status = streams
+            # print(len(status))
+            writeData.write(json.dumps(relicsStreams, indent=2))
+        print(len(relicsStreams))
+        uploadFile('response.json', 'LiveStreams.json', "ftp.relicsofthepast.dev")
+        relicsStreams.clear()
+        time.sleep(30)
 
-    for stream in streams:
-      if isinstance(stream, dict):
-        title = stream['title'].lower().split(' ')
-        #print(' '.join(title))
-        if 'relics' in title and stream['type'] == 'live':
-          print(title)
-          relicsStreams.append(stream)
+def refreshOauth(queue):
+    while True:
+        print('called Oauth refresh')
+        oauthToken, regenTimer = util.genAccessToken()
+        queue.put(oauthToken)
+        print(regenTimer)
+        time.sleep(30)
 
+dataQueue = queue.Queue()
 
-    with open('response.json', 'wt') as writeData:
-      status = streams
-      print(len(status))
-      writeData.write(json.dumps(relicsStreams, indent=2))
-    uploadFile('response.json', 'response.json', "ftp.relicsofthepast.dev")
+refreshThread = threading.Thread(target=refreshOauth, args=(dataQueue, ))
+mainThread = threading.Thread(target=main, args=(dataQueue, ))
 
-asyncio.run(main())
+if __name__ == '__main__':
+    refreshThread.start()
+    mainThread.start()
+    #dataQueue.put('kill')

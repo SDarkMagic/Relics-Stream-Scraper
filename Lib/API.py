@@ -4,8 +4,8 @@ import json
 import Lib.util as util
 
 
-def getStreams(gameId, maxLen=50, pagination=None):
-    token, regenTimer = util.regenAccessToken()
+def getStreams(oauth, gameId, maxLen=50, pagination=None):
+    token = oauth
     API_HEADERS = {
     'Client-ID' : os.getenv('CLIENT_ID'),
     'Authorization' : f'Bearer {token}'
@@ -16,4 +16,4 @@ def getStreams(gameId, maxLen=50, pagination=None):
         status = requests.get(f'https://api.twitch.tv/helix/streams?game_id={gameId}&first={maxLen}', headers=API_HEADERS)
     return(status.json())
 
-getStreams(110758)
+#getStreams(110758)

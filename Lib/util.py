@@ -2,7 +2,7 @@ import os
 import sys
 import requests
 
-def regenAccessToken():
+def genAccessToken():
     OAUTH_REQUEST_ENDPOINT = 'https://id.twitch.tv/oauth2/token'
     REQUEST_HEADERS = {
         'client_id' : os.getenv('CLIENT_ID'),

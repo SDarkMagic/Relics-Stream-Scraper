@@ -62,6 +62,9 @@ def main(queue):
         for stream in streams:
             if isinstance(stream, dict):
                 title = stream['title'].lower().split(' ')
+                for word in title:
+                    wordIdx = title.index(word)
+                    title[wordIdx] = util.puncStrip(word)
                 if 'relics' in title and stream['type'] == 'live':
                     #print(title)
                     relicsStreams.append(stream)

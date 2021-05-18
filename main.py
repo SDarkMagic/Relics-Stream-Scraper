@@ -57,7 +57,11 @@ def main(queue):
         #print(queueData)
         oauthToken = queueData
         relicsStreams = []
-        streams = checkStreams(maxLength=maxLength)
+        try:
+          streams = checkStreams(maxLength=maxLength)
+        except:
+          time.sleep(60)
+          continue
         #print(f'streams length {len(streams)}')
         for stream in streams:
             if isinstance(stream, dict):

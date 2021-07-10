@@ -83,7 +83,7 @@ def main(queue):
         print(len(relicsStreams))
         uploadFile('response.json', 'LiveStreams.json', "ftp.relicsofthepast.dev")
         relicsStreams.clear()
-        time.sleep(30)
+        time.sleep(60)
 
 def refreshOauth(queue):
     while True:
@@ -91,7 +91,10 @@ def refreshOauth(queue):
         oauthToken, regenTimer = util.genAccessToken()
         queue.put(oauthToken)
         print(regenTimer)
-        time.sleep(30)
+        sleptTime = 0
+        while sleptTime < regenTimer:
+            time.sleep(30)
+            sleptTime -= 30
 
 dataQueue = queue.Queue()
 

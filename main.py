@@ -6,19 +6,12 @@ import os
 import threading
 import queue
 import time
-#import sys
-#import signal
+import asyncio
+
 
 oauthToken = None
 botwGameId = 110758
 
-"""
-def killHandler(signal_received, frame):
-    dataQueue.put('kill')
-    refreshThread.join()
-    mainThread.join()
-    sys.exit(0)
-"""
 def checkStreams(pagination=None, maxLength=50, resultList=None):
     if resultList != None:
         pass
@@ -45,17 +38,30 @@ def uploadFile(file, fileName, destHost):
     print(f'{fileName} uploaded successfully!')
     try:
         ftp.quit()
+        print('FTP connection quit')
     except:
         ftp.close()
+        print('FTP function Closed')
+    return
 
 def main(queue):
     global oauthToken
     maxLength = 100
+    queueData = None
+    sleepDelay = 30
+    sleptTime = 0
     print('started main')
     while True:
-        queueData = queue.get()
-        #print(queueData)
-        oauthToken = queueData
+        if queueData != None:
+            if (queueData[1] - sleptTime <= sleepDelay):
+                time.sleep((queueData[1] - sleptTime) + 1)
+                queueData = queue.get()
+            else:
+                pass
+        else:
+            queueData = queue.get()
+        # print(f'QueueData: {queueData}')
+        oauthToken = queueData[0]
         relicsStreams = []
         try:
           streams = checkStreams(maxLength=maxLength)
@@ -83,18 +89,19 @@ def main(queue):
         print(len(relicsStreams))
         uploadFile('response.json', 'LiveStreams.json', "ftp.relicsofthepast.dev")
         relicsStreams.clear()
-        time.sleep(60)
+        time.sleep(sleepDelay)
+        sleptTime += sleepDelay
 
 def refreshOauth(queue):
     while True:
         print('called Oauth refresh')
         oauthToken, regenTimer = util.genAccessToken()
-        queue.put(oauthToken)
+        queue.put([oauthToken, regenTimer])
         print(regenTimer)
         sleptTime = 0
         while sleptTime < regenTimer:
-            time.sleep(30)
-            sleptTime -= 30
+            time.sleep(5)
+            sleptTime += 5
 
 dataQueue = queue.Queue()
 

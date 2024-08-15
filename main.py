@@ -7,10 +7,11 @@ import threading
 import queue
 import time
 import asyncio
-
+import logging
 
 oauthToken = None
 botwGameId = 110758
+console = logging.Logger
 
 def checkStreams(pagination=None, maxLength=50, resultList=None):
     if resultList != None:
@@ -33,9 +34,15 @@ def uploadFile(file, fileName, destHost):
     user = os.getenv('FTP_USERNAME')
     password = os.getenv('FTP_PASSWORD')
     ftp = ftplib.FTP(destHost)
-    ftp.login(user=user, passwd=password)
-    ftp.storbinary(f'STOR {fileName}', open(file, 'rb'))
-    print(f'{fileName} uploaded successfully!')
+    try:
+        ftp.login(user=user, passwd=password)
+        ftp.storbinary(f'STOR {fileName}', open(file, 'rb'))
+        print(f'{fileName} uploaded successfully!')
+    except EOFError:
+        print('Connection closed due to EOFError')
+    except:
+        print('unknown error occured')
+
     try:
         ftp.quit()
         print('FTP connection quit')
@@ -75,7 +82,7 @@ def main(queue):
                 for word in title:
                     wordIdx = title.index(word)
                     title[wordIdx] = util.puncStrip(word)
-                if 'relics' in title and stream['type'] == 'live':
+                if ('relics' in title or 'rotp' in title) and stream['type'] == 'live':
                     #print(title)
                     relicsStreams.append(stream)
                 else:
@@ -105,8 +112,8 @@ def refreshOauth(queue):
 
 dataQueue = queue.Queue()
 
-refreshThread = threading.Thread(target=refreshOauth, args=(dataQueue, ))
-mainThread = threading.Thread(target=main, args=(dataQueue, ))
+refreshThread = threading.Thread(target=refreshOauth, args=(dataQueue, ), name='Check-Thread')
+mainThread = threading.Thread(target=main, args=(dataQueue, ), name='OAuth-Thread')
 
 if __name__ == '__main__':
     refreshThread.start()
